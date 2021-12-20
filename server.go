@@ -18,7 +18,6 @@ type Config struct {
 	ApiVersion      string
 	Timeout         time.Duration
 	Logger          logger.Logger
-	Router          mux.Router
 }
 
 type Server interface {
@@ -34,13 +33,14 @@ type server struct {
 }
 
 func NewServer(config Config) Server {
-	s := &server{cfg: config, log: config.Logger, r: &config.Router}
+	r := mux.NewRouter().StrictSlash(true)
+	s := &server{cfg: config, log: config.Logger, r: r}
 	s.srv = &http.Server{
 		Addr: config.Addr,
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * config.Timeout,
 		ReadTimeout:  time.Second * config.Timeout,
-		Handler:      &config.Router, // Pass our instance of gorilla/mux in.
+		Handler:      r, // Pass our instance of gorilla/mux in.
 	}
 	return s
 }
