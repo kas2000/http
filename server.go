@@ -12,7 +12,7 @@ import (
 )
 
 type Config struct {
-	Addr            string
+	Port            string
 	ShutdownTimeout time.Duration
 	GracefulTimeout time.Duration
 	ApiVersion      string
@@ -21,8 +21,8 @@ type Config struct {
 }
 
 type Server interface {
-	ListenAndServe() error
-	Handle(method string, path string, fn func(w http.ResponseWriter, r *http.Request))
+	ListenAndServe()
+	Handle(method string, path string, next func(w http.ResponseWriter, r *http.Request))
 }
 
 type server struct {
@@ -36,7 +36,7 @@ func NewServer(config Config) Server {
 	r := mux.NewRouter().StrictSlash(true)
 	s := &server{cfg: config, log: config.Logger, r: r}
 	s.srv = &http.Server{
-		Addr: config.Addr,
+		Addr: "0.0.0.0:" + config.Port,
 		// Good practice to set timeouts to avoid Slowloris attacks.
 		WriteTimeout: time.Second * config.Timeout,
 		ReadTimeout:  time.Second * config.Timeout,
@@ -45,11 +45,11 @@ func NewServer(config Config) Server {
 	return s
 }
 
-func (s *server) Handle(method string, path string, fn func(w http.ResponseWriter, r *http.Request)) {
-	s.r.HandleFunc(path, Logging(fn, s.log)).Methods(method)
+func (s *server) Handle(method string, path string, next func(w http.ResponseWriter, r *http.Request)) {
+	s.r.HandleFunc(path, Logging(next, s.log)).Methods(method)
 }
 
-func (s *server) ListenAndServe() error {
+func (s *server) ListenAndServe() {
 	var wait time.Duration
 	flag.DurationVar(&wait, "graceful-timeout", time.Second* s.cfg.GracefulTimeout, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
 	flag.Parse()
@@ -72,7 +72,7 @@ func (s *server) ListenAndServe() error {
 		}
 	}()
 
-	log.Info("Server started on address: " + s.cfg.Addr)
+	log.Info("Server started on port: " + s.cfg.Port)
 	// Block until we receive our signal.
 	<-c
 
@@ -82,10 +82,8 @@ func (s *server) ListenAndServe() error {
 	defer cancel()
 
 	if err := s.srv.Shutdown(ctx); err != nil {
-		log.Warn(err.Error())
+		log.Warn("The server shutdown with error: " + err.Error())
 	}
 
 	log.Info("The server is down")
-
-	return nil
 }
