@@ -22,7 +22,7 @@ type Config struct {
 
 type Server interface {
 	ListenAndServe()
-	Handle(method string, path string, next func(w http.ResponseWriter, r *http.Request))
+	Handle(method string, path string, final Endpoint )
 }
 
 type server struct {
@@ -45,8 +45,8 @@ func NewServer(config Config) Server {
 	return s
 }
 
-func (s *server) Handle(method string, path string, next func(w http.ResponseWriter, r *http.Request)) {
-	s.r.HandleFunc(path, Logging(next, s.log)).Methods(method)
+func (s *server) Handle(method string, path string, final Endpoint) {
+	s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
 }
 
 func (s *server) ListenAndServe() {
