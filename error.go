@@ -13,7 +13,7 @@ type Error struct {
 }
 
 func NewError(status int, message string, system string, code int) *Error {
-	c := strconv.Itoa(status) + strconv.Itoa(code)
+	c := system + "." + strconv.Itoa(status) + strconv.Itoa(code)
 	return &Error{
 		System:  system,
 		Status:  status,
