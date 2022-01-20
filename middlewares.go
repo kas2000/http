@@ -14,7 +14,7 @@ type Endpoint func(w http.ResponseWriter, r *http.Request) Response
 
 func JWT(next Endpoint) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
-		fmt.Println(r.Header)
+		fmt.Println(r.Header.Get("Authorization"))
 		response := next(w, r)
 
 		return response
