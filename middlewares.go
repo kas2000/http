@@ -3,13 +3,13 @@ package http
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kas2000/logger"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/kas2000/logger"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
-	"time"
 	"strings"
+	"time"
 )
 
 type Endpoint func(w http.ResponseWriter, r *http.Request) Response
@@ -23,8 +23,8 @@ func JWT(next Endpoint) Endpoint {
 		fmt.Println(accessToken)
 
 		token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); ! ok {
-				err := fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				err := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 				return nil, err
 			}
 			return hmacSecret, nil
@@ -37,7 +37,7 @@ func JWT(next Endpoint) Endpoint {
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
 			fmt.Println(claims)
 		} else {
-			fmt.Println(err)
+			return Unauthorized(112, err.Error(), "JWT middleware")
 		}
 
 		response := next(w, r)
