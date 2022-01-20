@@ -16,33 +16,38 @@ type Endpoint func(w http.ResponseWriter, r *http.Request) Response
 
 func JWT(next Endpoint) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
-		t := r.Header.Get("Authorization")
-		s := strings.Split(t, " ")
-		accessToken := s[1]
-		hmacSecret := []byte("Hello world")
-		fmt.Println(accessToken)
-
-		token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				err := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
-				return nil, err
-			}
-			return hmacSecret, nil
-		})
-
-		if !token.Valid {
-			return Unauthorized(111, "token is not valid", "JWT middleware")
-		}
-
-		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			fmt.Println(claims)
+		fmt.Println(r.URL.String())
+		if r.URL.String() == "/token" {
+			return next(w, r)
 		} else {
-			return Unauthorized(112, err.Error(), "JWT middleware")
+			t := r.Header.Get("Authorization")
+			s := strings.Split(t, " ")
+			accessToken := s[1]
+			hmacSecret := []byte("Hello world")
+			fmt.Println(accessToken)
+
+			token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					err := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+					return nil, err
+				}
+				return hmacSecret, nil
+			})
+
+			if !token.Valid {
+				return Unauthorized(111, "token is not valid", "JWT middleware")
+			}
+
+			if claims, ok := token.Claims.(jwt.MapClaims); ok {
+				fmt.Println(claims)
+			} else {
+				return Unauthorized(112, err.Error(), "JWT middleware")
+			}
+
+			response := next(w, r)
+
+			return response
 		}
-
-		response := next(w, r)
-
-		return response
 	}
 }
 
