@@ -12,6 +12,10 @@ type Error struct {
 	System  string `json:"system,omitempty"`
 }
 
+func (e Error) Error() string {
+	panic("implement me")
+}
+
 func NewError(status int, message string, system string, code int) *Error {
 	c := system + "." + strconv.Itoa(status) + strconv.Itoa(code)
 	return &Error{
@@ -30,4 +34,9 @@ func BadRequest(code int, message string, system string) Response {
 func InternalServer(code int, message string, system string) Response {
 	err := NewError(http.StatusInternalServerError, message, system, code)
 	return NewResponse(http.StatusInternalServerError, err, nil)
+}
+
+func Unauthorized(code int, message string, system string) Response {
+	err := NewError(http.StatusUnauthorized, message, system, code)
+	return NewResponse(http.StatusUnauthorized, err, nil)
 }

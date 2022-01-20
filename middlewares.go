@@ -4,17 +4,42 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kas2000/logger"
+	"github.com/golang-jwt/jwt/v4"
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
 	"time"
+	"strings"
 )
 
 type Endpoint func(w http.ResponseWriter, r *http.Request) Response
 
 func JWT(next Endpoint) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
-		fmt.Println(r.Header.Get("Authorization"))
+		t := r.Header.Get("Authorization")
+		s := strings.Split(t, " ")
+		accessToken := s[1]
+		hmacSecret := []byte("Hello world")
+		fmt.Println(accessToken)
+
+		token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); ! ok {
+				err := fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+				return nil, err
+			}
+			return hmacSecret, nil
+		})
+
+		if !token.Valid {
+			return Unauthorized(111, "token is not valid", "JWT middleware")
+		}
+
+		if claims, ok := token.Claims.(jwt.MapClaims); ok {
+			fmt.Println(claims)
+		} else {
+			fmt.Println(err)
+		}
+
 		response := next(w, r)
 
 		return response
