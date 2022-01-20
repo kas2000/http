@@ -26,3 +26,8 @@ func BadRequest(code int, message string, system string) Response {
 	err := NewError(http.StatusBadRequest, message, system, code)
 	return NewResponse(http.StatusBadRequest, err, nil)
 }
+
+func InternalServer(code int, message string, system string) Response {
+	err := NewError(http.StatusInternalServerError, message, system, code)
+	return NewResponse(http.StatusInternalServerError, err, nil)
+}

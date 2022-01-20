@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/kas2000/logger"
 	"net/http"
 	"net/http/httptest"
@@ -11,27 +12,10 @@ import (
 
 type Endpoint func(w http.ResponseWriter, r *http.Request) Response
 
-func Logging(final Endpoint, log logger.Logger) Endpoint {
+func JWT(next Endpoint) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
-		t1 := time.Now()
-		rec := httptest.NewRecorder()
-		log.Debug(r.Method + " " + r.URL.String() + " " + r.Header.Get("X-Request-Id"))
-		response := final(w, r)
-
-		dumpResp, _ := httputil.DumpResponse(rec.Result(), true)
-		dumpReq, _ := httputil.DumpRequest(r, true)
-
-		// we copy the captured response headers to our new response
-		for k, v := range rec.Header() {
-			w.Header()[k] = v
-		}
-
-		//grab the captured response body
-		//data := rec.Body.Bytes()
-		//w.WriteHeader(rec.Result().StatusCode)
-		//_, _ = w.Write(data)
-		dur := time.Since(t1)
-		log.Debug(string(dumpReq) + "\n" + string(dumpResp) + " " + dur.String())
+		fmt.Println(r.Header)
+		response := next(w, r)
 
 		return response
 	}
@@ -60,5 +44,31 @@ func Json(next Endpoint) http.HandlerFunc {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+	}
+}
+
+func Logging(next Endpoint, log logger.Logger) Endpoint {
+	return func(w http.ResponseWriter, r *http.Request) Response {
+		t1 := time.Now()
+		rec := httptest.NewRecorder()
+		log.Debug(r.Method + " " + r.URL.String() + " " + r.Header.Get("X-Request-Id"))
+		response := next(w, r)
+
+		dumpResp, _ := httputil.DumpResponse(rec.Result(), true)
+		dumpReq, _ := httputil.DumpRequest(r, true)
+
+		// we copy the captured response headers to our new response
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+
+		//grab the captured response body
+		//data := rec.Body.Bytes()
+		//w.WriteHeader(rec.Result().StatusCode)
+		//_, _ = w.Write(data)
+		dur := time.Since(t1)
+		log.Debug(string(dumpReq) + "\n" + string(dumpResp) + " " + dur.String())
+
+		return response
 	}
 }
