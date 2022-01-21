@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"crypto/rsa"
 	"flag"
 	"github.com/gorilla/mux"
 	"github.com/kas2000/logger"
@@ -18,11 +19,12 @@ type Config struct {
 	ApiVersion      string
 	Timeout         time.Duration
 	Logger          logger.Logger
+	PublicKey       *rsa.PublicKey
 }
 
 type Server interface {
 	ListenAndServe()
-	Handle(method string, path string, final Endpoint )
+	Handle(method string, path string, final Endpoint)
 }
 
 type server struct {
@@ -47,12 +49,12 @@ func NewServer(config Config) Server {
 
 func (s *server) Handle(method string, path string, final Endpoint) {
 	//s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
-	s.r.HandleFunc(path, Json(Logging(JWT(final), s.log))).Methods(method)
+	s.r.HandleFunc(path, Json(Logging(JWT(final, s.cfg.PublicKey), s.log))).Methods(method)
 }
 
 func (s *server) ListenAndServe() {
 	var wait time.Duration
-	flag.DurationVar(&wait, "graceful-timeout", time.Second* s.cfg.GracefulTimeout, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
+	flag.DurationVar(&wait, "graceful-timeout", time.Second*s.cfg.GracefulTimeout, "the duration for which the server gracefully wait for existing connections to finish - e.g. 15s or 1m")
 	flag.Parse()
 
 	log := s.log

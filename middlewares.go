@@ -1,6 +1,7 @@
 package http
 
 import (
+	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
@@ -14,24 +15,23 @@ import (
 
 type Endpoint func(w http.ResponseWriter, r *http.Request) Response
 
-func JWT(next Endpoint) Endpoint {
+func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
 		fmt.Println(r.URL.String())
-		if r.URL.String() == "/token" {
+		if r.URL.String() == "/token" || r.URL.String() == "/authenticate" {
 			return next(w, r)
 		} else {
 			t := r.Header.Get("Authorization")
 			s := strings.Split(t, " ")
 			accessToken := s[1]
-			hmacSecret := []byte("Hello world")
 			fmt.Println(accessToken)
 
 			token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 					err := fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 					return nil, err
 				}
-				return hmacSecret, nil
+				return verifyKey, nil
 			})
 
 			if !token.Valid {
