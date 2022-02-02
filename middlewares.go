@@ -18,7 +18,7 @@ type Endpoint func(w http.ResponseWriter, r *http.Request) Response
 func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
 		fmt.Println(r.URL.String())
-		if r.URL.String() == "/token" || r.URL.String() == "/authenticate" {
+		if r.URL.String() == "/token" || r.URL.String() == "/authenticate" || r.URL.String() == "/dummy"{
 			return next(w, r)
 		} else {
 			t := r.Header.Get("Authorization")
