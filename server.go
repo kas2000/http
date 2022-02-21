@@ -48,8 +48,8 @@ func NewServer(config Config) Server {
 }
 
 func (s *server) Handle(method string, path string, final Endpoint) {
-	//s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
-	s.r.HandleFunc(path, Json(Logging(JWT(final, s.cfg.PublicKey), s.log))).Methods(method)
+	s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
+	//s.r.HandleFunc(path, Json(Logging(JWT(final, s.cfg.PublicKey), s.log))).Methods(method)
 }
 
 func (s *server) ListenAndServe() {
