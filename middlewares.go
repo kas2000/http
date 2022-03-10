@@ -108,16 +108,16 @@ func Logging(next Endpoint, log logger.Logger) Endpoint {
 		dBytes, _ := json.Marshal(response.Response())
 
 		if response.StatusCode()%200 < 100 || response.StatusCode()%300 < 100 {
-			log.Warn(LogRequest(r), zap.Any(" body= ",  bodyString),
-									zap.Any(" duration= ", time.Since(start)),
-									zap.Any(" status= ",  response.StatusCode()),
-									zap.Any(" ", string(dBytes)),
+			log.Warn(LogRequest(r), zap.Any("body",  bodyString),
+									zap.Any("duration", time.Since(start)),
+									zap.Any("status",  response.StatusCode()),
+									zap.Any("response", string(dBytes)),
 									)
 		} else {
-			log.Debug(LogRequest(r), zap.Any(" body= ",  bodyString),
-				zap.Any(" duration= ", time.Since(start)),
-				zap.Any(" status= ",  response.StatusCode()),
-				zap.Any(" ", string(dBytes)),)
+			log.Debug(LogRequest(r), zap.Any("body",  bodyString),
+				zap.Any("duration", time.Since(start)),
+				zap.Any("status",  response.StatusCode()),
+				zap.Any("response", string(dBytes)),)
 		}
 
 		return response
