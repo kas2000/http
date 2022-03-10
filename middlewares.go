@@ -93,9 +93,9 @@ func Logging(next Endpoint, log logger.Logger) Endpoint {
 		}
 
 		//grab the captured response body
-		//data := rec.Body.Bytes()
-		//w.WriteHeader(rec.Result().StatusCode)
-		//_, _ = w.Write(data)
+		data := rec.Body.Bytes()
+		w.WriteHeader(rec.Result().StatusCode)
+		_, _ = w.Write(data)
 		dur := time.Since(t1)
 		log.Debug(string(dumpReq) + "\n" + string(dumpResp) + " " + dur.String())
 
