@@ -1,14 +1,16 @@
 package http
 
 import (
+	"bytes"
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/kas2000/logger"
+	"go.uber.org/zap"
+	"io/ioutil"
+	"mime"
 	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
 	"strings"
 	"time"
 )
@@ -79,26 +81,71 @@ func Json(next Endpoint) http.HandlerFunc {
 
 func Logging(next Endpoint, log logger.Logger) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
-		t1 := time.Now()
-		rec := httptest.NewRecorder()
-		log.Debug(r.Method + " " + r.URL.String() + " " + r.Header.Get("X-Request-Id"))
+		start := time.Now()
+
+		// Read the content
+		var bodyBytes []byte
+		var bodyString string
+
+		var contentType string
+		contentType, _, _ = mime.ParseMediaType(r.Header.Get("Content-Type"))
+		if contentType != "" && !strings.HasPrefix(contentType, "multipart/") || contentType == "" {
+			if r.Body != nil {
+				bodyBytes, _ = ioutil.ReadAll(r.Body)
+			}
+			// Restore the io.ReadCloser to its original state
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+			// Use the content
+			bodyString = string(bodyBytes)
+		} else {
+			bodyString = "file uploading - logs rejected"
+		}
 		response := next(w, r)
 
-		dumpResp, _ := httputil.DumpResponse(rec.Result(), true)
-		dumpReq, _ := httputil.DumpRequest(r, true)
-
-		// we copy the captured response headers to our new response
-		for k, v := range rec.Header() {
-			w.Header()[k] = v
+		if response == nil {
+			return nil
 		}
+		dBytes, _ := json.Marshal(response.Response())
 
-		//grab the captured response body
-		data := rec.Body.Bytes()
-		w.WriteHeader(rec.Result().StatusCode)
-		_, _ = w.Write(data)
-		dur := time.Since(t1)
-		log.Debug(string(dumpReq) + "\n" + string(dumpResp) + " " + dur.String())
+		if response.StatusCode()%200 < 100 || response.StatusCode()%300 < 100 {
+			log.Warn(LogRequest(r), zap.Any(" body= ",  bodyString),
+									zap.Any(" duration= ", time.Since(start)),
+									zap.Any(" status= ",  response.StatusCode()),
+									zap.Any(" ", string(dBytes)),
+									)
+		} else {
+			log.Debug(LogRequest(r), zap.Any(" body= ",  bodyString),
+				zap.Any(" duration= ", time.Since(start)),
+				zap.Any(" status= ",  response.StatusCode()),
+				zap.Any(" ", string(dBytes)),)
+		}
 
 		return response
 	}
+}
+
+func LogRequest(r *http.Request) string {
+	// Create return string
+	var request []string
+	// Add the request string
+	urlPath := fmt.Sprintf("%v %v", r.Method, r.URL)
+	request = append(request, urlPath)
+	// Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+	// Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		_ = r.ParseForm()
+		request = append(request, " ")
+		request = append(request, r.Form.Encode())
+	}
+	// Return the request as a string
+	return strings.Join(request, " ") + " "
 }
