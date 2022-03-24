@@ -13,13 +13,15 @@ import (
 )
 
 type Config struct {
+	IsGatewayServer bool
+	PublicKey       *rsa.PublicKey
+
 	Port            string
 	ShutdownTimeout time.Duration
 	GracefulTimeout time.Duration
 	ApiVersion      string
 	Timeout         time.Duration
 	Logger          logger.Logger
-	PublicKey       *rsa.PublicKey
 }
 
 type Server interface {
@@ -48,8 +50,11 @@ func NewServer(config Config) Server {
 }
 
 func (s *server) Handle(method string, path string, final Endpoint) {
-	s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
-	//s.r.HandleFunc(path, Json(Logging(JWT(final, s.cfg.PublicKey), s.log))).Methods(method)
+	if s.cfg.IsGatewayServer {
+		s.r.HandleFunc(path, Json(Logging(JWT(final, s.cfg.PublicKey), s.log))).Methods(method)
+	} else {
+		s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
+	}
 }
 
 func (s *server) ListenAndServe() {
