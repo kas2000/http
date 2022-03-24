@@ -50,11 +50,13 @@ func NewServer(config Config) Server {
 }
 
 func (s *server) Handle(method string, path string, final Endpoint) {
-	if s.cfg.IsGatewayServer {
-		s.r.HandleFunc(path, Json(Logging(JWT(final, s.cfg.PublicKey), s.log))).Methods(method)
-	} else {
-		s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
-	}
+	s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
+
+	//if s.cfg.IsGatewayServer { TODO: uncomment when finished with gateway-service
+	//	s.r.HandleFunc(path, Json(Logging(JWT(final, s.cfg.PublicKey), s.log))).Methods(method)
+	//} else {
+	//	s.r.HandleFunc(path, Json(Logging(final, s.log))).Methods(method)
+	//}
 }
 
 func (s *server) ListenAndServe() {
