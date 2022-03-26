@@ -63,7 +63,7 @@ func Authorized(claims jwt.MapClaims, r *http.Request) bool {
 	permissions := acl["permissions"].(map[string]interface{})
 	for scope, apis := range permissions {
 		fmt.Println(scope)
-		api := apis.(map[string][]string)
+		api := apis.(map[string]interface{})
 		for uri, _ := range api {
 			fmt.Println(uri)
 		}
