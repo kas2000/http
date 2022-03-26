@@ -43,7 +43,7 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok {
 				if !Authorized(claims, r) {
-					return Unauthorized(102, err.Error(), "JWT middleware")
+					return Unauthorized(102, "method is not allowed", "JWT middleware")
 				}
 			} else {
 				return Unauthorized(103, err.Error(), "JWT middleware")
