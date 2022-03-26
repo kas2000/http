@@ -28,7 +28,6 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 			}
 			s := strings.Split(t, " ")
 			accessToken := s[1]
-			fmt.Println(accessToken)
 
 			token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 				if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
@@ -43,7 +42,8 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 			}
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok {
-				fmt.Println(claims)
+				//fmt.Println(claims)
+				Authorized(claims, r)
 			} else {
 				return Unauthorized(112, err.Error(), "JWT middleware")
 			}
@@ -53,6 +53,23 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 			return response
 		}
 	}
+}
+
+func Authorized(claims jwt.MapClaims, r *http.Request) bool {
+	fmt.Println(r.RequestURI)
+
+	user := claims["user"].(map[string]map[string]interface{})
+	acl := user["acl"]
+	permissions := acl["permissions"].(map[string]interface{})
+	for scope, apis := range permissions {
+		fmt.Println(scope)
+		api := apis.(map[string][]string)
+		for uri, _ := range api {
+			fmt.Println(uri)
+		}
+	}
+
+	return false
 }
 
 func Json(next Endpoint) http.HandlerFunc {
@@ -110,16 +127,16 @@ func Logging(next Endpoint, log logger.Logger) Endpoint {
 		dBytes, _ := json.Marshal(response.Response())
 
 		if response.StatusCode() >= 300 {
-			log.Warn(LogRequest(r), zap.Any("body",  bodyString),
-									zap.Any("duration", time.Since(start)),
-									zap.Any("status",  response.StatusCode()),
-									zap.Any("response", string(dBytes)),
-									)
-		} else {
-			log.Debug(LogRequest(r), zap.Any("body",  bodyString),
+			log.Warn(LogRequest(r), zap.Any("body", bodyString),
 				zap.Any("duration", time.Since(start)),
-				zap.Any("status",  response.StatusCode()),
-				zap.Any("response", string(dBytes)),)
+				zap.Any("status", response.StatusCode()),
+				zap.Any("response", string(dBytes)),
+			)
+		} else {
+			log.Debug(LogRequest(r), zap.Any("body", bodyString),
+				zap.Any("duration", time.Since(start)),
+				zap.Any("status", response.StatusCode()),
+				zap.Any("response", string(dBytes)))
 		}
 		return response
 	}
