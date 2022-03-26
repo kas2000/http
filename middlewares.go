@@ -58,8 +58,8 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 func Authorized(claims jwt.MapClaims, r *http.Request) bool {
 	fmt.Println(r.RequestURI)
 
-	user := claims["user"].(map[string]map[string]interface{})
-	acl := user["acl"]
+	user := claims["user"].(map[string]interface{})
+	acl := user["acl"].(map[string]interface{})
 	permissions := acl["permissions"].(map[string]interface{})
 	for scope, apis := range permissions {
 		fmt.Println(scope)
