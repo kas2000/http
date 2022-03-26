@@ -64,13 +64,19 @@ func Authorized(claims jwt.MapClaims, r *http.Request) bool {
 	for scope, apis := range permissions {
 		fmt.Println(scope)
 		api := apis.(map[string]interface{})
-		for uri, m := range api {
-			fmt.Println(uri)
-			methods := m.([]interface{})
-			for _, method := range methods {
-				fmt.Println(method.(string))
-			}
+		if m, found := api[r.RequestURI]; found {
+			allowedMethods := m.([]interface{})
+			fmt.Println(allowedMethods)
+		} else {
+			fmt.Println("Not found")
 		}
+		//for uri, m := range api {
+		//	fmt.Println(uri)
+		//	methods :=
+		//	for _, method := range methods {
+		//		fmt.Println(method.(string))
+		//	}
+		//}
 	}
 
 	return false
