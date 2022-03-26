@@ -66,9 +66,9 @@ func Authorized(claims jwt.MapClaims, r *http.Request) bool {
 		api := apis.(map[string]interface{})
 		for uri, m := range api {
 			fmt.Println(uri)
-			methods := m.([]string)
+			methods := m.([]interface{})
 			for _, method := range methods {
-				fmt.Println(method)
+				fmt.Println(method.(string))
 			}
 		}
 	}
