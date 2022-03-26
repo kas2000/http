@@ -38,14 +38,15 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 			})
 
 			if !token.Valid {
-				return Unauthorized(111, "token is not valid", "JWT middleware")
+				return Unauthorized(101, "token is not valid", "JWT middleware")
 			}
 
 			if claims, ok := token.Claims.(jwt.MapClaims); ok {
-				//fmt.Println(claims)
-				Authorized(claims, r)
+				if !Authorized(claims, r) {
+					return Unauthorized(102, err.Error(), "JWT middleware")
+				}
 			} else {
-				return Unauthorized(112, err.Error(), "JWT middleware")
+				return Unauthorized(103, err.Error(), "JWT middleware")
 			}
 
 			response := next(w, r)
@@ -57,6 +58,17 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 
 func Authorized(claims jwt.MapClaims, r *http.Request) bool {
 	fmt.Println(r.RequestURI)
+	var httpMethod string
+	switch r.Method {
+	case "GET":
+		httpMethod = "read"
+	case "DELETE":
+		httpMethod = "delete"
+	case "PUT":
+		httpMethod = "update"
+	case "POST":
+		httpMethod = "create"
+	}
 
 	user := claims["user"].(map[string]interface{})
 	acl := user["acl"].(map[string]interface{})
@@ -66,17 +78,13 @@ func Authorized(claims jwt.MapClaims, r *http.Request) bool {
 		api := apis.(map[string]interface{})
 		if m, found := api[r.RequestURI]; found {
 			allowedMethods := m.([]interface{})
-			fmt.Println(allowedMethods)
-		} else {
-			fmt.Println("Not found")
+			for _, methodRaw := range allowedMethods {
+				method := methodRaw.(string)
+				if method == httpMethod {
+					return true
+				}
+			}
 		}
-		//for uri, m := range api {
-		//	fmt.Println(uri)
-		//	methods :=
-		//	for _, method := range methods {
-		//		fmt.Println(method.(string))
-		//	}
-		//}
 	}
 
 	return false
