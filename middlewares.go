@@ -19,11 +19,13 @@ type Endpoint func(w http.ResponseWriter, r *http.Request) Response
 
 func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 	return func(w http.ResponseWriter, r *http.Request) Response {
-		fmt.Println(r.URL.String())
-		if r.URL.String() == "/token" || r.URL.String() == "/authenticate" || r.URL.String() == "/dummy"{
+		if r.URL.String() == "/token" || r.URL.String() == "/authenticate" {
 			return next(w, r)
 		} else {
 			t := r.Header.Get("Authorization")
+			if t == "" {
+				return Unauthorized(100, "token is not provided", "JWT middleware")
+			}
 			s := strings.Split(t, " ")
 			accessToken := s[1]
 			fmt.Println(accessToken)
