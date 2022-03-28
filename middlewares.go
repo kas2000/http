@@ -57,7 +57,8 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 }
 
 func Authorized(claims jwt.MapClaims, r *http.Request) bool {
-	fmt.Println(r.RequestURI)
+	fmt.Println(r.URL.RawPath)
+	fmt.Println(r.URL.RequestURI())
 	var httpMethod string
 	switch r.Method {
 	case "GET":
