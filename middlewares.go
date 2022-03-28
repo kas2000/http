@@ -57,7 +57,6 @@ func JWT(next Endpoint, verifyKey *rsa.PublicKey) Endpoint {
 }
 
 func Authorized(claims jwt.MapClaims, r *http.Request) bool {
-	fmt.Println(r.URL.Path)
 	var httpMethod string
 	switch r.Method {
 	case "GET":
@@ -75,7 +74,7 @@ func Authorized(claims jwt.MapClaims, r *http.Request) bool {
 	permissions := acl["permissions"].(map[string]interface{})
 	for _, apis := range permissions {
 		api := apis.(map[string]interface{})
-		if m, found := api[r.RequestURI]; found {
+		if m, found := api[r.URL.Path]; found {
 			allowedMethods := m.([]interface{})
 			for _, methodRaw := range allowedMethods {
 				method := methodRaw.(string)
