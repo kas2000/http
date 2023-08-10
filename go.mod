@@ -5,7 +5,7 @@ go 1.17
 require (
 	github.com/golang-jwt/jwt/v4 v4.2.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kas2000/logger v0.0.0-20211125145255-db20a3da8bed
+	github.com/kas2000/logger v0.0.0-20211220112650-3451f0cdcf5c
 )
 
 require (
