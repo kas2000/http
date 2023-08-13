@@ -31,6 +31,11 @@ func BadRequest(code int, message string, system string) Response {
 	return NewResponse(http.StatusBadRequest, err, nil)
 }
 
+func NotFound(code int, message string, system string) Response {
+	err := NewError(http.StatusNotFound, message, system, code)
+	return NewResponse(http.StatusNotFound, err, nil)
+}
+
 func InternalServer(code int, message string, system string) Response {
 	err := NewError(http.StatusInternalServerError, message, system, code)
 	return NewResponse(http.StatusInternalServerError, err, nil)
