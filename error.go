@@ -13,7 +13,7 @@ type Error struct {
 }
 
 func (e Error) Error() string {
-	panic("implement me")
+	return "Status: " + strconv.Itoa(e.Status) + " Message: " + e.Message + " Code: " + e.Code + " System: " + e.System
 }
 
 func NewError(status int, message string, system string, code int) *Error {
